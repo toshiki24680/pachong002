@@ -296,9 +296,11 @@ class XiaoBaCrawler:
                             skill=cols[6].get_text(strip=True),
                             count_current=count_current,
                             count_total=count_total,
+                            accumulated_count=0,  # Will be set in accumulate_data
                             total_time=cols[8].get_text(strip=True),
                             status=cols[9].get_text(strip=True),
-                            runtime=cols[10].get_text(strip=True) if len(cols) > 10 else ""
+                            runtime=cols[10].get_text(strip=True) if len(cols) > 10 else "",
+                            keywords_detected={}  # Will be set in accumulate_data
                         )
                         data_list.append(data_item)
                     except (ValueError, AttributeError) as e:
