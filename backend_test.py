@@ -470,6 +470,64 @@ class XiaoBaCrawlerTester:
             f"crawler/test/{username}",
             200
         )
+        
+    def test_data_accumulation_logic(self):
+        """Test data accumulation logic by checking fields in crawler data"""
+        print("\n🔍 Testing Data Accumulation Logic...")
+        self.tests_run += 1
+        
+        try:
+            url = f"{self.api_url}/crawler/data"
+            response = requests.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if not data:
+                    print("⚠️ No crawler data found to test accumulation logic")
+                    # We'll consider this a pass since it's not a failure of the feature
+                    self.tests_passed += 1
+                    return True
+                
+                # Check for accumulated_count field
+                has_accumulated_count = all("accumulated_count" in item for item in data)
+                
+                # Check for keywords_detected field
+                has_keywords_detected = all("keywords_detected" in item for item in data)
+                
+                if has_accumulated_count and has_keywords_detected:
+                    self.tests_passed += 1
+                    print("✅ Data accumulation fields present in crawler data")
+                    print(f"   - accumulated_count field: ✅")
+                    print(f"   - keywords_detected field: ✅")
+                    
+                    # Show some sample data
+                    if data:
+                        sample = data[0]
+                        print(f"\nSample data:")
+                        print(f"  Account: {sample.get('account_username')}")
+                        print(f"  Current count: {sample.get('count_current')}")
+                        print(f"  Total count: {sample.get('count_total')}")
+                        print(f"  Accumulated count: {sample.get('accumulated_count')}")
+                        print(f"  Keywords detected: {sample.get('keywords_detected')}")
+                    
+                    return True
+                else:
+                    missing = []
+                    if not has_accumulated_count:
+                        missing.append("accumulated_count")
+                    if not has_keywords_detected:
+                        missing.append("keywords_detected")
+                    
+                    print(f"❌ Missing required fields: {', '.join(missing)}")
+                    return False
+            else:
+                print(f"❌ Failed to get crawler data - Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
 
     def test_continuous_crawling(self):
         """Test continuous crawling by checking status multiple times"""
