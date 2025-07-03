@@ -310,14 +310,14 @@ class XiaoBaCrawlerTester:
             print(f"❌ {len(filter_tests) - success_count} filter tests failed")
             return False
 
-    def test_export_csv(self):
-        """Test exporting CSV data"""
+    def test_export_csv(self, params=None):
+        """Test exporting CSV data with optional parameters"""
         print(f"\n🔍 Testing Export CSV...")
         self.tests_run += 1
         
         try:
             url = f"{self.api_url}/crawler/data/export"
-            response = requests.get(url)
+            response = requests.get(url, params=params)
             
             success = response.status_code == 200
             if success:
@@ -332,6 +332,135 @@ class XiaoBaCrawlerTester:
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
             return False
+    
+    def test_enhanced_csv_export(self):
+        """Test enhanced CSV export with different parameter combinations"""
+        print("\n🔍 Testing Enhanced CSV Export...")
+        self.tests_run += 1
+        
+        # Test different parameter combinations
+        export_tests = [
+            {"name": "Default export", "params": {}},
+            {"name": "Include keywords", "params": {"include_keywords": "true"}},
+            {"name": "Include accumulated", "params": {"include_accumulated": "true"}},
+            {"name": "Filter by account", "params": {"account_username": "KR666"}},
+            {"name": "All options", "params": {"include_keywords": "true", "include_accumulated": "true", "account_username": "KR666"}}
+        ]
+        
+        success_count = 0
+        for test in export_tests:
+            print(f"\n  Testing {test['name']}...")
+            try:
+                url = f"{self.api_url}/crawler/data/export"
+                response = requests.get(url, params=test['params'])
+                
+                if response.status_code == 200:
+                    print(f"  ✅ Export successful")
+                    print(f"  Content-Type: {response.headers.get('Content-Type')}")
+                    print(f"  Content-Disposition: {response.headers.get('Content-Disposition')}")
+                    
+                    # Check if we got CSV data
+                    if response.headers.get('Content-Type') == 'text/csv':
+                        csv_content = response.content.decode('utf-8-sig')
+                        header_line = csv_content.split('\n')[0] if csv_content else ""
+                        
+                        # Verify headers based on parameters
+                        if "include_keywords" in test['params'] and test['params']["include_keywords"] == "true":
+                            if "关键词检测" in header_line:
+                                print(f"  ✅ Keywords column included")
+                            else:
+                                print(f"  ❌ Keywords column missing")
+                        
+                        if "include_accumulated" in test['params'] and test['params']["include_accumulated"] == "true":
+                            if "累计次数" in header_line:
+                                print(f"  ✅ Accumulated count column included")
+                            else:
+                                print(f"  ❌ Accumulated count column missing")
+                    
+                    success_count += 1
+                else:
+                    print(f"  ❌ Failed with status code: {response.status_code}")
+            except Exception as e:
+                print(f"  ❌ Error: {str(e)}")
+        
+        if success_count == len(export_tests):
+            self.tests_passed += 1
+            print(f"✅ All {len(export_tests)} export tests passed")
+            return True
+        else:
+            print(f"❌ {len(export_tests) - success_count} export tests failed")
+            return False
+    
+    # Analytics Endpoints Tests
+    def test_keyword_statistics(self):
+        """Test getting keyword statistics"""
+        def validate_keywords(data):
+            if not data:
+                return True, "No keyword statistics found (may be normal if no keywords detected yet)"
+            
+            # Check if the response has the expected structure
+            if isinstance(data, list) and all(isinstance(item, dict) for item in data):
+                if all("keyword" in item and "total_count" in item and "accounts_affected" in item for item in data):
+                    return True, f"Found statistics for {len(data)} keywords"
+            
+            return False, "Response doesn't have the expected structure"
+        
+        return self.run_test(
+            "Get Keyword Statistics",
+            "GET",
+            "crawler/data/keywords",
+            200,
+            validation_func=validate_keywords
+        )
+    
+    def test_data_summary(self):
+        """Test getting comprehensive data summary"""
+        def validate_summary(data):
+            required_fields = ["total_records", "active_accounts", "recent_records_24h", 
+                              "keyword_stats", "accumulation_stats"]
+            
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if not missing_fields:
+                return True, f"Summary contains all required fields"
+            else:
+                return False, f"Missing fields: {', '.join(missing_fields)}"
+        
+        return self.run_test(
+            "Get Data Summary",
+            "GET",
+            "crawler/data/summary",
+            200,
+            validation_func=validate_summary
+        )
+    
+    def test_accounts_performance(self):
+        """Test getting per-account performance statistics"""
+        def validate_performance(data):
+            if not data:
+                return True, "No account performance data found (may be normal if no data collected yet)"
+            
+            # Check if the response has the expected structure
+            if isinstance(data, list) and all(isinstance(item, dict) for item in data):
+                required_fields = ["_id", "total_records", "total_accumulated", "total_current", 
+                                  "avg_current", "last_crawl"]
+                
+                for item in data:
+                    missing_fields = [field for field in required_fields if field not in item]
+                    if missing_fields:
+                        return False, f"Account {item.get('_id', 'unknown')} missing fields: {', '.join(missing_fields)}"
+                
+                return True, f"Found performance data for {len(data)} accounts"
+            
+            return False, "Response doesn't have the expected structure"
+        
+        return self.run_test(
+            "Get Accounts Performance",
+            "GET",
+            "crawler/data/accounts-performance",
+            200,
+            validation_func=validate_performance
+        )
 
     def test_account_test(self, username):
         """Test testing a specific account"""
