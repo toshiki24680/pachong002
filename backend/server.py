@@ -495,6 +495,106 @@ async def delete_crawler_account(username: str):
         raise HTTPException(status_code=404, detail="Account not found")
     return {"message": "Account deleted successfully"}
 
+# Batch Account Management
+@api_router.post("/crawler/accounts/batch/enable")
+async def enable_all_accounts():
+    """Enable all accounts for crawling"""
+    try:
+        result = await db.crawler_accounts.update_many(
+            {},
+            {"$set": {"status": "inactive"}}
+        )
+        return {"message": f"Enabled {result.modified_count} accounts for crawling"}
+    except Exception as e:
+        logger.error(f"Error enabling all accounts: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/crawler/accounts/batch/disable")
+async def disable_all_accounts():
+    """Disable all accounts from crawling"""
+    try:
+        result = await db.crawler_accounts.update_many(
+            {},
+            {"$set": {"status": "disabled"}}
+        )
+        return {"message": f"Disabled {result.modified_count} accounts from crawling"}
+    except Exception as e:
+        logger.error(f"Error disabling all accounts: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/crawler/accounts/{username}/enable")
+async def enable_account(username: str):
+    """Enable a specific account for crawling"""
+    try:
+        result = await db.crawler_accounts.update_one(
+            {"username": username},
+            {"$set": {"status": "inactive"}}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Account not found")
+        return {"message": f"Account {username} enabled for crawling"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error enabling account {username}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/crawler/accounts/{username}/disable")
+async def disable_account(username: str):
+    """Disable a specific account from crawling"""
+    try:
+        result = await db.crawler_accounts.update_one(
+            {"username": username},
+            {"$set": {"status": "disabled"}}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Account not found")
+        return {"message": f"Account {username} disabled from crawling"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disabling account {username}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Enhanced account creation with validation
+@api_router.post("/crawler/accounts/validate")
+async def validate_account(account: CrawlerAccountCreate):
+    """Validate account credentials by attempting login"""
+    try:
+        # Check if account already exists
+        existing = await db.crawler_accounts.find_one({"username": account.username})
+        if existing:
+            raise HTTPException(status_code=400, detail="Account already exists")
+        
+        # Test login
+        config = await get_crawler_config()
+        temp_account = CrawlerAccount(**account.dict())
+        crawler = XiaoBaCrawler(temp_account, config)
+        
+        try:
+            crawler.setup_driver()
+            login_result = crawler.login()
+            crawler.close()
+            
+            if login_result:
+                # Create account if validation successful
+                account_obj = CrawlerAccount(**account.dict())
+                await db.crawler_accounts.insert_one(account_obj.dict())
+                return {"message": "Account validated and created successfully", "account": account_obj}
+            else:
+                return {"message": "Account validation failed - login unsuccessful", "valid": False}
+                
+        except Exception as e:
+            crawler.close()
+            logger.error(f"Error validating account {account.username}: {str(e)}")
+            return {"message": f"Account validation failed: {str(e)}", "valid": False}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in account validation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Crawler Data Management
 @api_router.get("/crawler/data", response_model=List[CrawlerData])
 async def get_crawler_data(account_username: Optional[str] = None):
