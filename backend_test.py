@@ -464,12 +464,98 @@ class XiaoBaCrawlerTester:
 
     def test_account_test(self, username):
         """Test testing a specific account"""
-        return self.run_test(
-            f"Test Account {username}",
-            "POST",
-            f"crawler/test/{username}",
-            200
-        )
+        print(f"\n🔍 Testing Login Process for {username} with 师门 button selection...")
+        self.tests_run += 1
+        
+        try:
+            url = f"{self.api_url}/crawler/test/{username}"
+            response = requests.post(url)
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"✅ Test login API call successful")
+                print(f"Test result: {result.get('test_result')}")
+                print(f"Message: {result.get('message')}")
+                
+                # Check for screenshots
+                print("\nChecking for debug screenshots...")
+                screenshot_types = [
+                    f"login_page_{username}.png",
+                    f"after_shimen_{username}.png",
+                    f"before_login_{username}.png",
+                    f"no_shimen_button_{username}.png"
+                ]
+                
+                for screenshot in screenshot_types:
+                    screenshot_path = f"/app/debug_screenshots/{screenshot}"
+                    if os.path.exists(screenshot_path):
+                        file_time = datetime.fromtimestamp(os.path.getmtime(screenshot_path))
+                        file_size = os.path.getsize(screenshot_path)
+                        print(f"✅ Found {screenshot} - Size: {file_size} bytes, Modified: {file_time}")
+                    else:
+                        print(f"❌ Screenshot not found: {screenshot}")
+                
+                # Check server logs for 师门 button detection
+                print("\nChecking server logs for 师门 button detection...")
+                try:
+                    # Get the latest log entries
+                    log_output = os.popen("tail -n 100 /var/log/supervisor/backend.*.log 2>/dev/null").read()
+                    
+                    # Look for relevant log entries
+                    shimen_search = f"Looking for 师门 button for account: {username}"
+                    shimen_found = any([
+                        f"Found 师门 button using exact text match" in log_output,
+                        f"Found 师门 button using input button" in log_output,
+                        f"Found 师门 button using general element search" in log_output,
+                        f"Found 师门 button using comprehensive search" in log_output
+                    ])
+                    shimen_clicked = "Clicked 师门 button" in log_output
+                    login_success = f"Successfully logged in with account: {username}" in log_output
+                    
+                    if shimen_search in log_output:
+                        print(f"✅ Log shows search for 师门 button")
+                    else:
+                        print(f"❌ No log entry for searching 师门 button")
+                    
+                    if shimen_found:
+                        print(f"✅ Log shows 师门 button was found")
+                    else:
+                        print(f"❌ No log entry indicating 师门 button was found")
+                    
+                    if shimen_clicked:
+                        print(f"✅ Log shows 师门 button was clicked")
+                    else:
+                        print(f"❌ No log entry indicating 师门 button was clicked")
+                    
+                    if login_success:
+                        print(f"✅ Log shows successful login")
+                    else:
+                        print(f"❌ No log entry indicating successful login")
+                    
+                    # Overall success determination
+                    if shimen_found and shimen_clicked and login_success:
+                        self.tests_passed += 1
+                        print("\n✅ 师门 button selection and login process working correctly")
+                        return True
+                    else:
+                        print("\n❌ Issues detected with 师门 button selection or login process")
+                        return False
+                    
+                except Exception as e:
+                    print(f"Error checking logs: {str(e)}")
+                    return False
+            else:
+                print(f"❌ Failed - Status: {response.status_code}")
+                try:
+                    error_detail = response.json().get('detail', 'No detail provided')
+                    print(f"Error detail: {error_detail}")
+                except:
+                    print("Could not parse error response")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
         
     def test_data_accumulation_logic(self):
         """Test data accumulation logic by checking fields in crawler data"""
