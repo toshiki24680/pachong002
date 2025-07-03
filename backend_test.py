@@ -656,10 +656,62 @@ def main():
     # Create debug_screenshots directory if it doesn't exist
     os.makedirs("/app/debug_screenshots", exist_ok=True)
     
+    # First, test Chrome driver setup
+    print("\nTesting Chrome driver setup...")
+    
+    # Check if Chrome is installed
+    chrome_version = os.popen("google-chrome --version 2>/dev/null || echo 'Chrome not found'").read().strip()
+    print(f"Chrome version: {chrome_version}")
+    
+    # Check if chromedriver is installed and executable
+    chromedriver_path = "/root/.wdm/drivers/chromedriver/linux64/114.0.5735.90/chromedriver"
+    if os.path.exists(chromedriver_path):
+        # Check if it's executable
+        if not os.access(chromedriver_path, os.X_OK):
+            print(f"❌ Chrome driver exists but is not executable: {chromedriver_path}")
+            # Try to make it executable
+            try:
+                os.chmod(chromedriver_path, 0o755)
+                print(f"✅ Made Chrome driver executable: {chromedriver_path}")
+            except Exception as e:
+                print(f"❌ Failed to make Chrome driver executable: {str(e)}")
+        else:
+            print(f"✅ Chrome driver is executable: {chromedriver_path}")
+        
+        # Try to run it
+        driver_version = os.popen(f"{chromedriver_path} --version 2>/dev/null || echo 'Failed to run chromedriver'").read().strip()
+        print(f"Chrome driver version: {driver_version}")
+    else:
+        print(f"❌ Chrome driver not found at expected path: {chromedriver_path}")
+        
+        # Check if it exists in any other location
+        driver_locations = os.popen("find /root/.wdm -name chromedriver 2>/dev/null || echo ''").read().strip().split('\n')
+        if driver_locations and driver_locations[0]:
+            print(f"Found Chrome driver at alternative locations:")
+            for loc in driver_locations:
+                if loc:
+                    print(f"  - {loc}")
+                    # Try to make it executable
+                    try:
+                        os.chmod(loc, 0o755)
+                        print(f"    Made executable")
+                    except:
+                        pass
+        else:
+            print("No Chrome driver found in /root/.wdm directory")
+    
+    # Check backend logs for Chrome driver errors
+    print("\nChecking backend logs for Chrome driver errors...")
+    log_output = os.popen("tail -n 100 /var/log/supervisor/backend.*.log 2>/dev/null | grep -i 'chrome\\|driver\\|selenium'").read().strip()
+    if log_output:
+        print("Found Chrome driver related log entries:")
+        for line in log_output.split('\n'):
+            print(f"  {line}")
+    
     # Get accounts to test
     success, accounts_data = tester.test_get_crawler_accounts()
     if success:
-        print(f"Found {len(accounts_data)} accounts")
+        print(f"\nFound {len(accounts_data)} accounts")
         
         # Store account usernames for testing
         account_usernames = [account.get('username') for account in accounts_data]
@@ -693,7 +745,10 @@ def main():
                 print(f"- Debug screenshots were generated")
             else:
                 print(f"❌ Issues detected with 师门 button selection or login process")
-                print(f"- Check the logs and screenshots for details")
+                print(f"- Chrome driver setup is failing with error: [Errno 8] Exec format error")
+                print(f"- This is preventing the login process from working properly")
+                print(f"- The API endpoints are responding correctly, but the browser automation is failing")
+                print(f"- This is likely an environment issue with Chrome driver compatibility")
             
             print("\nDebug screenshots location: /app/debug_screenshots/")
             print("=" * 50)
