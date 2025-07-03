@@ -461,26 +461,30 @@ async def export_crawler_data(account_username: Optional[str] = None):
     data = await db.crawler_data.find(query).sort("crawl_timestamp", -1).to_list(10000)
     
     if not data:
-        raise HTTPException(status_code=404, detail="No data found")
-    
-    # Convert to DataFrame
-    df = pd.DataFrame([
-        {
-            "账号": item["account_username"],
-            "序号": item["sequence_number"],
-            "IP": item["ip"],
-            "类型": item["type"],
-            "命名": item["name"],
-            "等级": item["level"],
-            "门派": item["guild"],
-            "绝技": item["skill"],
-            "次数": f"{item['count_current']}/{item['count_total']}",
-            "总时间": item["total_time"],
-            "状态": item["status"],
-            "运行时间": item["runtime"],
-            "爬取时间": item["crawl_timestamp"]
-        } for item in data
-    ])
+        # Return empty CSV with headers if no data
+        df = pd.DataFrame(columns=[
+            "账号", "序号", "IP", "类型", "命名", "等级", "门派", "绝技", 
+            "次数", "总时间", "状态", "运行时间", "爬取时间"
+        ])
+    else:
+        # Convert to DataFrame
+        df = pd.DataFrame([
+            {
+                "账号": item["account_username"],
+                "序号": item["sequence_number"],
+                "IP": item["ip"],
+                "类型": item["type"],
+                "命名": item["name"],
+                "等级": item["level"],
+                "门派": item["guild"],
+                "绝技": item["skill"],
+                "次数": f"{item['count_current']}/{item['count_total']}",
+                "总时间": item["total_time"],
+                "状态": item["status"],
+                "运行时间": item["runtime"],
+                "爬取时间": item["crawl_timestamp"]
+            } for item in data
+        ])
     
     # Create CSV in memory
     output = io.StringIO()
