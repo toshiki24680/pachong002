@@ -443,11 +443,14 @@ class XiaoBaCrawler:
             data_list = self.parse_table_data()
             
             if data_list:
-                # Accumulate data
+                # Accumulate data and detect keywords
                 self.accumulate_data(data_list)
                 
                 # Save to database
                 await self.save_data(data_list)
+                
+                # Save keyword statistics
+                await self.save_keyword_stats(data_list)
                 
                 # Update account status
                 await db.crawler_accounts.update_one(
