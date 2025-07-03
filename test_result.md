@@ -136,64 +136,103 @@ backend:
         comment: "✅ Auto-start crawler on server startup - Working correctly"
 
   - task: "Account management API (add/delete accounts)"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Need to implement account add/delete functionality with proper validation and error handling"
+      - working: true
+        agent: "testing"
+        comment: "✅ Account management API is working correctly. Successfully tested account creation, validation, and deletion."
 
   - task: "Batch account start/stop API"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Need to implement batch operations for starting/stopping all accounts at once"
+      - working: true
+        agent: "testing"
+        comment: "✅ Batch account operations are working correctly. Successfully tested batch enable/disable and individual account enable/disable."
 
   - task: "Data accumulation logic for count reset"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Need to implement logic to detect when count resets (11/199 -> 1/199) and accumulate previous data"
+      - working: true
+        agent: "testing"
+        comment: "✅ Data accumulation logic is implemented correctly. The accumulated_count field is present in the data model and the accumulation logic is working as expected."
 
   - task: "Keyword statistics tracking"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Need to implement keyword tracking for phrases like '人脸提示', '没钱了' in crawler data"
+      - working: true
+        agent: "testing"
+        comment: "✅ Keyword statistics tracking is implemented correctly. The keywords_detected field is present in the data model and the /api/crawler/data/keywords endpoint returns the expected data structure."
 
   - task: "Data filtering API"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Need to implement data filtering API with various filter options"
+      - working: true
+        agent: "testing"
+        comment: "✅ Data filtering API is working correctly. Successfully tested filtering by account_username, keyword, status, guild, count range, and limit."
+
+  - task: "Enhanced CSV Export"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Enhanced CSV export is working correctly. Successfully tested exporting with include_keywords, include_accumulated, and account_username filters."
+
+  - task: "Analytics Endpoints"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ The accounts-performance endpoint is failing with error: 'PlanExecutor error during aggregation :: caused by :: The argument to $size must be an array, but was of type: null'. This is likely because the keywords_detected field is null in some documents. The other analytics endpoints (keywords and summary) are working correctly."
 
 frontend:
   - task: "Display continuous crawler status"
