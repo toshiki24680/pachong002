@@ -101,3 +101,61 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "现在的爬虫不会持续运行，需要不间断的持续运行抓取数据，刷新频率为45秒一次。"
+
+backend:
+  - task: "Continuous crawler scheduling at 45-second intervals"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Current crawler interval is hardcoded to 50 seconds instead of 45 seconds. Scheduler is not using config value and doesn't start automatically."
+  
+  - task: "Auto-start crawler on server startup"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Crawler needs to be started manually via API endpoint instead of starting automatically when server starts."
+
+frontend:
+  - task: "Display continuous crawler status"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "UI needs to show that crawler is running continuously and display real-time status updates."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Continuous crawler scheduling at 45-second intervals"
+    - "Auto-start crawler on server startup"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Identified that current crawler system has scheduling set to 50 seconds instead of 45 seconds, hardcoded instead of using config, and doesn't start automatically. Need to implement continuous crawling system."
