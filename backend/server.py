@@ -792,7 +792,13 @@ async def get_accounts_performance():
                 "total_current": {"$sum": "$count_current"},
                 "avg_current": {"$avg": "$count_current"},
                 "last_crawl": {"$max": "$crawl_timestamp"},
-                "keywords_detected": {"$sum": {"$size": {"$objectToArray": "$keywords_detected"}}}
+                "keywords_detected": {"$sum": {
+                    "$cond": [
+                        {"$isArray": {"$objectToArray": "$keywords_detected"}},
+                        {"$size": {"$objectToArray": "$keywords_detected"}},
+                        0
+                    ]
+                }}
             }},
             {"$sort": {"total_records": -1}}
         ]
