@@ -147,10 +147,10 @@ class XiaoBaCrawler:
         chrome_options.binary_location = "/usr/bin/chromium"
         
         try:
-            # Use system ChromeDriver
+            # Use system ChromeDriver directly without webdriver_manager
             service = Service("/usr/bin/chromedriver")
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            logger.info("Chrome driver setup successful using system Chromium")
+            logger.info("Chrome driver setup successful using system Chromium and ChromeDriver")
         except Exception as e:
             logger.error(f"Error setting up Chrome driver: {str(e)}")
             raise e
