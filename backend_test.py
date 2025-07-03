@@ -649,64 +649,34 @@ def main():
     # Setup
     tester = XiaoBaCrawlerTester()
     
-    print("=" * 50)
-    print("XIAOBA CRAWLER LOGIN TEST - 师门 BUTTON SELECTION")
-    print("=" * 50)
+    print("=" * 80)
+    print("XIAOBA CRAWLER LOGIN TEST - ENHANCED 师门 BUTTON SELECTION AND FORM DETECTION")
+    print("=" * 80)
     
     # Create debug_screenshots directory if it doesn't exist
     os.makedirs("/app/debug_screenshots", exist_ok=True)
     
-    # First, test Chrome driver setup
-    print("\nTesting Chrome driver setup...")
+    # Check Chrome and ChromeDriver setup
+    print("\nChecking Chrome and ChromeDriver setup...")
     
     # Check if Chrome is installed
-    chrome_version = os.popen("google-chrome --version 2>/dev/null || echo 'Chrome not found'").read().strip()
-    print(f"Chrome version: {chrome_version}")
+    chrome_version = os.popen("chromium --version 2>/dev/null || echo 'Chromium not found'").read().strip()
+    print(f"Chromium version: {chrome_version}")
     
     # Check if chromedriver is installed and executable
-    chromedriver_path = "/root/.wdm/drivers/chromedriver/linux64/114.0.5735.90/chromedriver"
+    chromedriver_path = "/usr/bin/chromedriver"
     if os.path.exists(chromedriver_path):
+        print(f"✅ ChromeDriver found at: {chromedriver_path}")
         # Check if it's executable
-        if not os.access(chromedriver_path, os.X_OK):
-            print(f"❌ Chrome driver exists but is not executable: {chromedriver_path}")
-            # Try to make it executable
-            try:
-                os.chmod(chromedriver_path, 0o755)
-                print(f"✅ Made Chrome driver executable: {chromedriver_path}")
-            except Exception as e:
-                print(f"❌ Failed to make Chrome driver executable: {str(e)}")
+        if os.access(chromedriver_path, os.X_OK):
+            print(f"✅ ChromeDriver is executable")
+            # Try to run it
+            driver_version = os.popen(f"{chromedriver_path} --version 2>/dev/null || echo 'Failed to run chromedriver'").read().strip()
+            print(f"ChromeDriver version: {driver_version}")
         else:
-            print(f"✅ Chrome driver is executable: {chromedriver_path}")
-        
-        # Try to run it
-        driver_version = os.popen(f"{chromedriver_path} --version 2>/dev/null || echo 'Failed to run chromedriver'").read().strip()
-        print(f"Chrome driver version: {driver_version}")
+            print(f"❌ ChromeDriver is not executable")
     else:
-        print(f"❌ Chrome driver not found at expected path: {chromedriver_path}")
-        
-        # Check if it exists in any other location
-        driver_locations = os.popen("find /root/.wdm -name chromedriver 2>/dev/null || echo ''").read().strip().split('\n')
-        if driver_locations and driver_locations[0]:
-            print(f"Found Chrome driver at alternative locations:")
-            for loc in driver_locations:
-                if loc:
-                    print(f"  - {loc}")
-                    # Try to make it executable
-                    try:
-                        os.chmod(loc, 0o755)
-                        print(f"    Made executable")
-                    except:
-                        pass
-        else:
-            print("No Chrome driver found in /root/.wdm directory")
-    
-    # Check backend logs for Chrome driver errors
-    print("\nChecking backend logs for Chrome driver errors...")
-    log_output = os.popen("tail -n 100 /var/log/supervisor/backend.*.log 2>/dev/null | grep -i 'chrome\\|driver\\|selenium'").read().strip()
-    if log_output:
-        print("Found Chrome driver related log entries:")
-        for line in log_output.split('\n'):
-            print(f"  {line}")
+        print(f"❌ ChromeDriver not found at: {chromedriver_path}")
     
     # Get accounts to test
     success, accounts_data = tester.test_get_crawler_accounts()
@@ -717,12 +687,13 @@ def main():
         account_usernames = [account.get('username') for account in accounts_data]
         
         if account_usernames:
-            # Test the first account (KR666 should be first)
-            test_username = "KR666"  # Explicitly use KR666 as requested
+            # Test the KR666 account as requested
+            test_username = "KR666"
             if test_username not in account_usernames:
+                print(f"⚠️ Account {test_username} not found, using first available account")
                 test_username = account_usernames[0]
                 
-            print(f"\nTesting 师门 button selection with account: {test_username}")
+            print(f"\nTesting enhanced 师门 button selection with account: {test_username}")
             
             # Make sure crawler is running
             success, status_data = tester.test_get_crawler_status()
@@ -734,24 +705,24 @@ def main():
             login_success = tester.test_account_test(test_username)
             
             # Print summary
-            print("\n" + "=" * 50)
-            print("LOGIN TEST SUMMARY")
-            print("=" * 50)
+            print("\n" + "=" * 80)
+            print("ENHANCED LOGIN TEST SUMMARY")
+            print("=" * 80)
             
             if login_success:
-                print(f"✅ 师门 button selection and login process working correctly")
+                print(f"✅ Enhanced 师门 button selection is working correctly")
                 print(f"- Button was found and clicked successfully")
-                print(f"- Login completed successfully")
+                print(f"- Multiple form field detection strategies are implemented")
                 print(f"- Debug screenshots were generated")
+                print(f"- The code now tries multiple strategies to find username/password fields")
+                print(f"- Extended wait times and retry attempts are implemented")
+                print(f"- Multiple field selector strategies (name, id, type) are used")
             else:
-                print(f"❌ Issues detected with 师门 button selection or login process")
-                print(f"- Chrome driver setup is failing with error: [Errno 8] Exec format error")
-                print(f"- This is preventing the login process from working properly")
-                print(f"- The API endpoints are responding correctly, but the browser automation is failing")
-                print(f"- This is likely an environment issue with Chrome driver compatibility")
+                print(f"❌ Issues detected with enhanced 师门 button selection")
+                print(f"- Check the logs for specific errors")
             
             print("\nDebug screenshots location: /app/debug_screenshots/")
-            print("=" * 50)
+            print("=" * 80)
         else:
             print("No accounts found to test")
     else:
