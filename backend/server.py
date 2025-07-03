@@ -536,6 +536,7 @@ async def generate_mock_data():
     except Exception as e:
         logger.error(f"Error generating mock data: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+@api_router.post("/crawler/start")
 async def start_crawler(background_tasks: BackgroundTasks):
     """Start the crawler with scheduled tasks"""
     try:
@@ -554,17 +555,21 @@ async def start_crawler(background_tasks: BackgroundTasks):
                 account_obj = CrawlerAccount(**account.dict())
                 await db.crawler_accounts.insert_one(account_obj.dict())
         
+        # Get crawler config to use the correct interval
+        config = await get_crawler_config()
+        
         # Start scheduler
         if not scheduler.running:
             scheduler.add_job(
                 crawl_all_accounts,
-                IntervalTrigger(seconds=50),
+                IntervalTrigger(seconds=config.crawl_interval),
                 id='crawler_job',
                 replace_existing=True
             )
             scheduler.start()
+            logger.info(f"Crawler started with {config.crawl_interval} second intervals")
             
-        return {"message": "Crawler started successfully"}
+        return {"message": f"Crawler started successfully with {config.crawl_interval} second intervals"}
         
     except Exception as e:
         logger.error(f"Error starting crawler: {str(e)}")
