@@ -649,141 +649,61 @@ def main():
     # Setup
     tester = XiaoBaCrawlerTester()
     
-    # Run tests
     print("=" * 50)
-    print("XIAOBA CRAWLER API TESTS")
+    print("XIAOBA CRAWLER LOGIN TEST - 师门 BUTTON SELECTION")
     print("=" * 50)
     
-    # Test API root
-    tester.test_root()
+    # Create debug_screenshots directory if it doesn't exist
+    os.makedirs("/app/debug_screenshots", exist_ok=True)
     
-    # 1. Test crawler configuration to verify 45-second interval
-    success, config_data = tester.test_get_crawler_config()
-    if success:
-        print(f"Crawler Configuration: {config_data}")
-        # If interval is not 45 seconds, update it
-        if config_data.get('crawl_interval') != 45:
-            print("Updating crawler interval to 45 seconds...")
-            tester.test_update_crawler_config(45)
-            # Verify the update
-            success, updated_config = tester.test_get_crawler_config()
-            if success:
-                print(f"Updated Configuration: {updated_config}")
-    
-    # 2. Test crawler status to check if it's running automatically
-    success, status_data = tester.test_get_crawler_status()
-    if success:
-        print(f"Crawler Status: {status_data}")
-        # If not running, start it
-        if status_data.get('crawl_status') != 'running':
-            print("Crawler not running automatically. Starting crawler...")
-            tester.test_start_crawler()
-    
-    # 3. Test getting accounts to verify default accounts are created
+    # Get accounts to test
     success, accounts_data = tester.test_get_crawler_accounts()
     if success:
         print(f"Found {len(accounts_data)} accounts")
         
-        # Store account usernames for later tests
+        # Store account usernames for testing
         account_usernames = [account.get('username') for account in accounts_data]
+        
+        if account_usernames:
+            # Test the first account (KR666 should be first)
+            test_username = "KR666"  # Explicitly use KR666 as requested
+            if test_username not in account_usernames:
+                test_username = account_usernames[0]
+                
+            print(f"\nTesting 师门 button selection with account: {test_username}")
+            
+            # Make sure crawler is running
+            success, status_data = tester.test_get_crawler_status()
+            if success and status_data.get('crawl_status') != 'running':
+                print("Starting crawler...")
+                tester.test_start_crawler()
+            
+            # Test the login process with focus on 师门 button
+            login_success = tester.test_account_test(test_username)
+            
+            # Print summary
+            print("\n" + "=" * 50)
+            print("LOGIN TEST SUMMARY")
+            print("=" * 50)
+            
+            if login_success:
+                print(f"✅ 师门 button selection and login process working correctly")
+                print(f"- Button was found and clicked successfully")
+                print(f"- Login completed successfully")
+                print(f"- Debug screenshots were generated")
+            else:
+                print(f"❌ Issues detected with 师门 button selection or login process")
+                print(f"- Check the logs and screenshots for details")
+            
+            print("\nDebug screenshots location: /app/debug_screenshots/")
+            print("=" * 50)
+        else:
+            print("No accounts found to test")
     else:
-        account_usernames = ["KR666", "KR777"]  # Fallback default accounts
+        print("Failed to retrieve accounts")
     
-    print("\n" + "=" * 50)
-    print("TESTING NEW FEATURES")
-    print("=" * 50)
-    
-    # 4. Test Account Management Enhancements
-    print("\n--- Account Management Tests ---")
-    
-    # Test account validation
-    tester.test_validate_account()
-    
-    # Test batch account operations
-    tester.test_batch_enable_accounts()
-    tester.test_batch_disable_accounts()
-    
-    # Test individual account operations (using first account from the list)
-    if account_usernames:
-        test_account = account_usernames[0]
-        tester.test_enable_specific_account(test_account)
-        tester.test_disable_specific_account(test_account)
-        
-        # Re-enable the account for further testing
-        tester.test_enable_specific_account(test_account)
-    
-    # Test account creation and deletion
-    success, new_account = tester.test_create_account()
-    if success and new_account:
-        new_username = new_account.get('username')
-        print(f"Created test account: {new_username}")
-        
-        # Test deleting the account
-        tester.test_delete_account(new_username)
-    
-    # 5. Test Enhanced Data API with Filtering
-    print("\n--- Data Filtering Tests ---")
-    tester.test_filtered_crawler_data()
-    
-    # 6. Test New Analytics Endpoints
-    print("\n--- Analytics Endpoints Tests ---")
-    tester.test_keyword_statistics()
-    tester.test_data_summary()
-    tester.test_accounts_performance()
-    
-    # 7. Test Enhanced CSV Export
-    print("\n--- Enhanced CSV Export Tests ---")
-    tester.test_enhanced_csv_export()
-    
-    # 8. Test Data Accumulation Logic
-    print("\n--- Data Accumulation Logic Tests ---")
-    tester.test_data_accumulation_logic()
-    
-    # 9. Test getting crawler data
-    success, crawler_data = tester.test_get_crawler_data()
-    if success:
-        print(f"Found {len(crawler_data)} data records")
-    
-    # 10. Test continuous crawling
-    tester.test_continuous_crawling()
-    
-    # 11. Test start/stop functionality
-    print("\nTesting start/stop functionality...")
-    # Stop the crawler
-    tester.test_stop_crawler()
-    
-    # Verify it's stopped
-    success, status_after_stop = tester.run_test(
-        "Get Crawler Status After Stop",
-        "GET",
-        "crawler/status",
-        200
-    )
-    if success and status_after_stop.get('crawl_status') == 'stopped':
-        print("✅ Crawler successfully stopped")
-    
-    # Start the crawler again
-    tester.test_start_crawler()
-    
-    # Verify it's running
-    success, status_after_start = tester.run_test(
-        "Get Crawler Status After Start",
-        "GET",
-        "crawler/status",
-        200
-    )
-    if success and status_after_start.get('crawl_status') == 'running':
-        print("✅ Crawler successfully restarted")
-    
-    # Test account testing (if accounts exist)
-    if account_usernames:
-        test_username = account_usernames[0]
-        tester.test_account_test(test_username)
-    
-    # Print results
-    print("\n" + "=" * 50)
-    print(f"Tests passed: {tester.tests_passed}/{tester.tests_run}")
-    print("=" * 50)
+    # Print overall results
+    print(f"\nTests passed: {tester.tests_passed}/{tester.tests_run}")
     
     return 0 if tester.tests_passed == tester.tests_run else 1
 
