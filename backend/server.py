@@ -683,6 +683,42 @@ async def startup_event():
         config = CrawlerConfig()
         await db.crawler_config.insert_one(config.dict())
         logger.info("Created default crawler configuration")
+    
+    # Auto-start the crawler for continuous operation
+    try:
+        # Initialize default accounts if none exist
+        existing_accounts = await db.crawler_accounts.count_documents({})
+        if existing_accounts == 0:
+            default_accounts = [
+                CrawlerAccountCreate(username="KR666", password="69203532xX"),
+                CrawlerAccountCreate(username="KR777", password="69203532xX"),
+                CrawlerAccountCreate(username="KR888", password="69203532xX"),
+                CrawlerAccountCreate(username="KR999", password="69203532xX"),
+                CrawlerAccountCreate(username="KR000", password="69203532xX")
+            ]
+            
+            for account in default_accounts:
+                account_obj = CrawlerAccount(**account.dict())
+                await db.crawler_accounts.insert_one(account_obj.dict())
+            logger.info("Created default crawler accounts")
+        
+        # Get crawler config to use the correct interval
+        config = await get_crawler_config()
+        
+        # Start scheduler automatically
+        if not scheduler.running:
+            scheduler.add_job(
+                crawl_all_accounts,
+                IntervalTrigger(seconds=config.crawl_interval),
+                id='crawler_job',
+                replace_existing=True
+            )
+            scheduler.start()
+            logger.info(f"Auto-started crawler with {config.crawl_interval} second intervals")
+            
+    except Exception as e:
+        logger.error(f"Error auto-starting crawler: {str(e)}")
+        # Don't raise exception to prevent server startup failure
 
 @app.on_event("shutdown")
 async def shutdown_event():
