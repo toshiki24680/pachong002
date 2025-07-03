@@ -804,8 +804,12 @@ async def get_accounts_performance():
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/crawler/data/export")
-async def export_crawler_data(account_username: Optional[str] = None):
-    """Export crawler data as CSV"""
+async def export_crawler_data(
+    account_username: Optional[str] = None,
+    include_keywords: bool = True,
+    include_accumulated: bool = True
+):
+    """Export crawler data as CSV with enhanced features"""
     query = {}
     if account_username:
         query["account_username"] = account_username
@@ -814,10 +818,14 @@ async def export_crawler_data(account_username: Optional[str] = None):
     
     if not data:
         # Return empty CSV with headers if no data
-        df = pd.DataFrame(columns=[
+        columns = [
             "账号", "序号", "IP", "类型", "命名", "等级", "门派", "绝技", 
-            "次数", "总时间", "状态", "运行时间", "爬取时间"
-        ])
+            "当前次数", "累计次数", "总次数", "总时间", "状态", "运行时间", "爬取时间"
+        ]
+        if include_keywords:
+            columns.append("关键词检测")
+        
+        df = pd.DataFrame(columns=columns)
     else:
         # Convert to DataFrame
         df = pd.DataFrame([
