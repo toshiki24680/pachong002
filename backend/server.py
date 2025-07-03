@@ -349,14 +349,17 @@ class XiaoBaCrawler:
                 return False
             
             # Fill in username and password
-            username_field = self.driver.find_element(By.NAME, "username")
-            password_field = self.driver.find_element(By.NAME, "password")
-            
-            username_field.clear()
-            username_field.send_keys(self.account.username)
-            
-            password_field.clear()
-            password_field.send_keys(self.account.password)
+            try:
+                username_field.clear()
+                username_field.send_keys(self.account.username)
+                logger.info(f"Filled username: {self.account.username}")
+                
+                password_field.clear()
+                password_field.send_keys(self.account.password)
+                logger.info("Filled password")
+            except Exception as e:
+                logger.error(f"Error filling login form: {str(e)}")
+                return False
             
             # Take screenshot before clicking login
             try:
