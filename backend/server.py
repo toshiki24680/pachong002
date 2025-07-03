@@ -827,9 +827,10 @@ async def export_crawler_data(
         
         df = pd.DataFrame(columns=columns)
     else:
-        # Convert to DataFrame
-        df = pd.DataFrame([
-            {
+        # Convert to DataFrame with enhanced fields
+        rows = []
+        for item in data:
+            row = {
                 "账号": item["account_username"],
                 "序号": item["sequence_number"],
                 "IP": item["ip"],
@@ -838,13 +839,28 @@ async def export_crawler_data(
                 "等级": item["level"],
                 "门派": item["guild"],
                 "绝技": item["skill"],
-                "次数": f"{item['count_current']}/{item['count_total']}",
+                "当前次数": item["count_current"],
+                "总次数": item["count_total"],
                 "总时间": item["total_time"],
                 "状态": item["status"],
                 "运行时间": item["runtime"],
                 "爬取时间": item["crawl_timestamp"]
-            } for item in data
-        ])
+            }
+            
+            if include_accumulated and "accumulated_count" in item:
+                row["累计次数"] = item["accumulated_count"]
+            
+            if include_keywords and "keywords_detected" in item:
+                keywords = item["keywords_detected"]
+                if keywords:
+                    keyword_str = "; ".join([f"{k}:{v}" for k, v in keywords.items()])
+                    row["关键词检测"] = keyword_str
+                else:
+                    row["关键词检测"] = ""
+            
+            rows.append(row)
+        
+        df = pd.DataFrame(rows)
     
     # Create CSV in memory
     output = io.StringIO()
