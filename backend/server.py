@@ -644,6 +644,48 @@ async def test_crawler_account(username: str):
         logger.error(f"Error testing crawler account {username}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# Configuration Management
+@api_router.get("/crawler/config", response_model=CrawlerConfig)
+async def get_crawler_config_endpoint():
+    """Get current crawler configuration"""
+    try:
+        config = await get_crawler_config()
+        return config
+    except Exception as e:
+        logger.error(f"Error getting crawler config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/crawler/config")
+async def update_crawler_config(config_update: dict):
+    """Update crawler configuration and restart scheduler if needed"""
+    try:
+        # Get current config
+        current_config = await get_crawler_config()
+        
+        # Update config in database
+        await db.crawler_config.update_one(
+            {"id": current_config.id},
+            {"$set": config_update}
+        )
+        
+        # If crawl_interval was changed and scheduler is running, restart it
+        if "crawl_interval" in config_update and scheduler.running:
+            scheduler.remove_job('crawler_job')
+            new_config = await get_crawler_config()
+            scheduler.add_job(
+                crawl_all_accounts,
+                IntervalTrigger(seconds=new_config.crawl_interval),
+                id='crawler_job',
+                replace_existing=True
+            )
+            logger.info(f"Restarted crawler with new interval: {new_config.crawl_interval} seconds")
+            
+        return {"message": "Configuration updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating crawler config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # WebSocket endpoint for real-time updates
 @api_router.websocket("/crawler/ws")
 async def websocket_endpoint(websocket: WebSocket):
