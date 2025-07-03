@@ -90,10 +90,18 @@ class CrawlerData(BaseModel):
     skill: str
     count_current: int
     count_total: int
+    accumulated_count: int = 0  # Total accumulated count across resets
     total_time: str
     status: str
     runtime: str
     crawl_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    keywords_detected: Dict[str, int] = Field(default_factory=dict)  # Keyword counts
+
+class KeywordStats(BaseModel):
+    keyword: str
+    total_count: int
+    accounts_affected: List[str]
+    last_seen: datetime
 
 class CrawlerConfig(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
