@@ -679,13 +679,129 @@ async def validate_account(account: CrawlerAccountCreate):
 
 # Crawler Data Management
 @api_router.get("/crawler/data", response_model=List[CrawlerData])
-async def get_crawler_data(account_username: Optional[str] = None):
+async def get_crawler_data(
+    account_username: Optional[str] = None,
+    keyword: Optional[str] = None,
+    status: Optional[str] = None,
+    guild: Optional[str] = None,
+    min_count: Optional[int] = None,
+    max_count: Optional[int] = None,
+    limit: Optional[int] = 1000
+):
+    """Get crawler data with optional filtering"""
     query = {}
+    
+    # Basic filters
     if account_username:
         query["account_username"] = account_username
+    if status:
+        query["status"] = status
+    if guild:
+        query["guild"] = guild
     
-    data = await db.crawler_data.find(query).sort("crawl_timestamp", -1).to_list(1000)
+    # Count range filter
+    if min_count is not None or max_count is not None:
+        count_query = {}
+        if min_count is not None:
+            count_query["$gte"] = min_count
+        if max_count is not None:
+            count_query["$lte"] = max_count
+        query["count_current"] = count_query
+    
+    # Keyword filter (search in multiple fields)
+    if keyword:
+        query["$or"] = [
+            {"type": {"$regex": keyword, "$options": "i"}},
+            {"name": {"$regex": keyword, "$options": "i"}},
+            {"guild": {"$regex": keyword, "$options": "i"}},
+            {"skill": {"$regex": keyword, "$options": "i"}},
+            {"status": {"$regex": keyword, "$options": "i"}},
+        ]
+    
+    data = await db.crawler_data.find(query).sort("crawl_timestamp", -1).to_list(limit)
     return [CrawlerData(**item) for item in data]
+
+@api_router.get("/crawler/data/keywords", response_model=List[KeywordStats])
+async def get_keyword_stats():
+    """Get keyword statistics"""
+    try:
+        stats = await db.keyword_stats.find().sort("total_count", -1).to_list(100)
+        return [KeywordStats(**stat) for stat in stats]
+    except Exception as e:
+        logger.error(f"Error getting keyword stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/crawler/data/summary")
+async def get_data_summary():
+    """Get summary statistics of crawler data"""
+    try:
+        # Get total counts
+        total_records = await db.crawler_data.count_documents({})
+        
+        # Get active accounts
+        active_accounts = await db.crawler_accounts.count_documents({"status": "active"})
+        
+        # Get keyword stats
+        keyword_stats = await db.keyword_stats.find().sort("total_count", -1).to_list(10)
+        
+        # Get recent data (last 24 hours)
+        last_24h = datetime.utcnow() - timedelta(hours=24)
+        recent_records = await db.crawler_data.count_documents({
+            "crawl_timestamp": {"$gte": last_24h}
+        })
+        
+        # Get count accumulation stats
+        pipeline = [
+            {"$group": {
+                "_id": None,
+                "total_accumulated": {"$sum": "$accumulated_count"},
+                "total_current": {"$sum": "$count_current"},
+                "avg_accumulated": {"$avg": "$accumulated_count"}
+            }}
+        ]
+        
+        accumulation_stats = await db.crawler_data.aggregate(pipeline).to_list(1)
+        
+        return {
+            "total_records": total_records,
+            "active_accounts": active_accounts,
+            "recent_records_24h": recent_records,
+            "keyword_stats": keyword_stats,
+            "accumulation_stats": accumulation_stats[0] if accumulation_stats else {
+                "total_accumulated": 0,
+                "total_current": 0,
+                "avg_accumulated": 0
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting data summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/crawler/data/accounts-performance")
+async def get_accounts_performance():
+    """Get performance statistics for each account"""
+    try:
+        pipeline = [
+            {"$group": {
+                "_id": "$account_username",
+                "total_records": {"$sum": 1},
+                "total_accumulated": {"$sum": "$accumulated_count"},
+                "total_current": {"$sum": "$count_current"},
+                "avg_current": {"$avg": "$count_current"},
+                "last_crawl": {"$max": "$crawl_timestamp"},
+                "keywords_detected": {"$sum": {"$size": {"$objectToArray": "$keywords_detected"}}}
+            }},
+            {"$sort": {"total_records": -1}}
+        ]
+        
+        performance = await db.crawler_data.aggregate(pipeline).to_list(100)
+        
+        return performance
+        
+    except Exception as e:
+        logger.error(f"Error getting accounts performance: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/crawler/data/export")
 async def export_crawler_data(account_username: Optional[str] = None):
