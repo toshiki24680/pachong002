@@ -131,9 +131,24 @@ class XiaoBaCrawler:
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920,1080")
         chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        self.driver = webdriver.Chrome(options=chrome_options)
+        try:
+            # Use webdriver-manager to automatically manage ChromeDriver
+            service = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            logger.error(f"Error setting up Chrome driver: {str(e)}")
+            # Fallback to system chromium if available
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-plugins")
+            self.driver = webdriver.Chrome(options=chrome_options)
+            
         self.driver.set_page_load_timeout(self.config.timeout)
+        # Execute script to remove webdriver property
+        self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
     def login(self):
         """Login to the website"""
