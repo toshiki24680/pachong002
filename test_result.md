@@ -224,15 +224,18 @@ backend:
 
   - task: "Analytics Endpoints"
     implemented: true
-    working: false
+    working: true
     file: "backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ The accounts-performance endpoint is failing with error: 'PlanExecutor error during aggregation :: caused by :: The argument to $size must be an array, but was of type: null'. This is likely because the keywords_detected field is null in some documents. The other analytics endpoints (keywords and summary) are working correctly."
+      - working: true
+        agent: "testing"
+        comment: "✅ Fixed the accounts-performance endpoint by adding a conditional check to handle null keywords_detected fields. All analytics endpoints are now working correctly."
 
 frontend:
   - task: "Display continuous crawler status"
