@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 class XiaoBaCrawlerTester:
-    def __init__(self, base_url="https://05ae1730-82e9-464a-93e4-8f0cc28d5a99.preview.emergentagent.com"):
+    def __init__(self, base_url="https://11eec037-dfe1-4712-a198-90f6321ae770.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
