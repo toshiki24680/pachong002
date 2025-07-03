@@ -289,14 +289,16 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Continuous crawler scheduling at 45-second intervals"
-    - "Auto-start crawler on server startup"
+    - "Account management API (add/delete accounts)"
+    - "Batch account start/stop API"
+    - "Data accumulation logic for count reset"
+    - "Keyword statistics tracking"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Identified that current crawler system has scheduling set to 50 seconds instead of 45 seconds, hardcoded instead of using config, and doesn't start automatically. Need to implement continuous crawling system."
+    message: "User requested new features: 1) Account management (add/delete), 2) Batch account controls, 3) Data accumulation logic for count resets, 4) Keyword statistics tracking, 5) Data filtering. Starting implementation with backend APIs first."
   - agent: "testing"
     message: "Tested the backend crawler system. The crawler is now correctly configured with a 45-second interval and auto-starts on server startup. All required endpoints are working properly. The system creates default accounts (KR666, KR777, KR888, KR999, KR000) and can collect data continuously. The start/stop functionality is working as expected."
