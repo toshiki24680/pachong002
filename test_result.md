@@ -118,7 +118,7 @@ backend:
         comment: "Current crawler interval is hardcoded to 50 seconds instead of 45 seconds. Scheduler is not using config value and doesn't start automatically."
       - working: true
         agent: "testing"
-        comment: "Crawler interval is now correctly set to 45 seconds. The configuration can be updated via the PUT /api/crawler/config endpoint. The crawler is using the configured interval value."
+        comment: "✅ Continuous crawler scheduling at 45-second intervals - Working correctly after configuration update"
   
   - task: "Auto-start crawler on server startup"
     implemented: true
@@ -133,7 +133,7 @@ backend:
         comment: "Crawler needs to be started manually via API endpoint instead of starting automatically when server starts."
       - working: true
         agent: "testing"
-        comment: "Crawler now auto-starts on server startup. The startup_event function initializes default accounts and starts the scheduler with the configured interval."
+        comment: "✅ Auto-start crawler on server startup - Working correctly"
 
 frontend:
   - task: "Display continuous crawler status"
