@@ -162,6 +162,15 @@ class XiaoBaCrawler:
     def login(self):
         """Login to the website with 师门 button selection"""
         try:
+            # Import the enhanced login method
+            try:
+                from enhanced_login import enhance_login_method
+                logger.info("Using enhanced login method")
+                return enhance_login_method(self.driver, self.account, self.config, logger)
+            except ImportError:
+                logger.warning("Enhanced login module not found, using default login method")
+                
+            # Default login method if enhanced method fails
             self.driver.get(self.config.target_url)
             
             # Wait for login page to load
