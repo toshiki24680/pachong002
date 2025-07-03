@@ -109,7 +109,7 @@ class CrawlerStats(BaseModel):
     total_accounts: int
     active_accounts: int
     total_records: int
-    last_update: datetime
+    last_update: Optional[datetime] = None
     crawl_status: str
 
 # Crawler Engine Class
