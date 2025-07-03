@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "现在的爬虫不会持续运行，需要不间断的持续运行抓取数据，刷新频率为45秒一次。"
+user_problem_statement: "需要添加多账号自主添加删除 ，全部账号一键启停。需要增加数据筛选以及累计功能例如次数/总数，11/199次下次刷新时变为1/199的时候自动提取上次刷新数据添加到现在的数据。以及统计某些关键词次数，例如人脸提示，没钱了，统计每行出现的次数"
 
 backend:
   - task: "Continuous crawler scheduling at 45-second intervals"
@@ -134,6 +134,139 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ Auto-start crawler on server startup - Working correctly"
+
+  - task: "Account management API (add/delete accounts)"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement account add/delete functionality with proper validation and error handling"
+
+  - task: "Batch account start/stop API"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement batch operations for starting/stopping all accounts at once"
+
+  - task: "Data accumulation logic for count reset"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement logic to detect when count resets (11/199 -> 1/199) and accumulate previous data"
+
+  - task: "Keyword statistics tracking"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement keyword tracking for phrases like '人脸提示', '没钱了' in crawler data"
+
+  - task: "Data filtering API"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement data filtering API with various filter options"
+
+frontend:
+  - task: "Display continuous crawler status"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "UI needs to show that crawler is running continuously and display real-time status updates."
+
+  - task: "Account management UI (add/delete accounts)"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement UI for adding/deleting accounts with form validation"
+
+  - task: "Batch account control UI"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement UI for batch start/stop of all accounts"
+
+  - task: "Data filtering UI"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement data filtering interface with various filter options"
+
+  - task: "Keyword statistics display"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement UI to display keyword statistics and counts"
+
+  - task: "Data accumulation display"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement UI to show accumulated data when count resets occur"
 
 frontend:
   - task: "Display continuous crawler status"
