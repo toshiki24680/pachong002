@@ -143,16 +143,17 @@ class XiaoBaCrawler:
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
+        # Use system Chromium
+        chrome_options.binary_location = "/usr/bin/chromium"
+        
         try:
-            # Use webdriver-manager to automatically manage ChromeDriver
-            service = Service(ChromeDriverManager().install())
+            # Use system ChromeDriver
+            service = Service("/usr/bin/chromedriver")
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            logger.info("Chrome driver setup successful using system Chromium")
         except Exception as e:
             logger.error(f"Error setting up Chrome driver: {str(e)}")
-            # Fallback to system chromium if available
-            chrome_options.add_argument("--disable-extensions")
-            chrome_options.add_argument("--disable-plugins")
-            self.driver = webdriver.Chrome(options=chrome_options)
+            raise e
             
         self.driver.set_page_load_timeout(self.config.timeout)
         # Execute script to remove webdriver property
