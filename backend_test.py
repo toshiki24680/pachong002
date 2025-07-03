@@ -94,6 +94,77 @@ class XiaoBaCrawlerTester:
             200
         )
 
+    # Account Management Tests
+    def test_validate_account(self, username="test_user", password="test_password"):
+        """Test validating account credentials"""
+        return self.run_test(
+            "Validate Account Credentials",
+            "POST",
+            "crawler/accounts/validate",
+            200,
+            data={"username": username, "password": password}
+        )
+    
+    def test_batch_enable_accounts(self):
+        """Test enabling all accounts"""
+        return self.run_test(
+            "Batch Enable All Accounts",
+            "POST",
+            "crawler/accounts/batch/enable",
+            200
+        )
+    
+    def test_batch_disable_accounts(self):
+        """Test disabling all accounts"""
+        return self.run_test(
+            "Batch Disable All Accounts",
+            "POST",
+            "crawler/accounts/batch/disable",
+            200
+        )
+    
+    def test_enable_specific_account(self, username):
+        """Test enabling a specific account"""
+        return self.run_test(
+            f"Enable Account {username}",
+            "POST",
+            f"crawler/accounts/{username}/enable",
+            200
+        )
+    
+    def test_disable_specific_account(self, username):
+        """Test disabling a specific account"""
+        return self.run_test(
+            f"Disable Account {username}",
+            "POST",
+            f"crawler/accounts/{username}/disable",
+            200
+        )
+    
+    def test_create_account(self, username=None, password=None):
+        """Test creating a new account"""
+        if username is None:
+            username = f"test_user_{random.randint(1000, 9999)}"
+        if password is None:
+            password = "test_password"
+            
+        return self.run_test(
+            "Create New Account",
+            "POST",
+            "crawler/accounts",
+            200,
+            data={"username": username, "password": password}
+        )
+    
+    def test_delete_account(self, username):
+        """Test deleting an account"""
+        return self.run_test(
+            f"Delete Account {username}",
+            "DELETE",
+            f"crawler/accounts/{username}",
+            200
+        )
+
     def test_get_crawler_config(self):
         """Test getting crawler configuration to verify 45-second interval"""
         def validate_config(config_data):
