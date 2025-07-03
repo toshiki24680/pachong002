@@ -77,4 +77,4 @@ agenthub/agents/youtube/db
 .cache/
 
 # Mobile development
-android-sdk/ 
+android-sdk/ google-chrome-stable_current_amd64.deb
