@@ -164,60 +164,104 @@ class XiaoBaCrawler:
             self.driver.get(self.config.target_url)
             
             # Wait for login page to load
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 15).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
+            
+            # Take a screenshot for debugging
+            try:
+                self.driver.save_screenshot(f"/app/debug_screenshots/login_page_{self.account.username}.png")
+                logger.info(f"Saved login page screenshot for {self.account.username}")
+            except:
+                pass
+            
+            # Wait a moment for page to fully load
+            time.sleep(2)
             
             # First, click the "师门" button as required
             logger.info(f"Looking for 师门 button for account: {self.account.username}")
             师门_button = None
             
-            # Try multiple strategies to find the 师门 button
+            # Enhanced strategies to find the 师门 button
             try:
-                # Strategy 1: Exact text match
-                师门_button = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[text()='师门']"))
+                # Strategy 1: Look for button with exact text "师门"
+                师门_button = WebDriverWait(self.driver, 8).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[normalize-space(text())='师门']"))
                 )
                 logger.info("Found 师门 button using exact text match")
             except:
                 try:
-                    # Strategy 2: Contains text
+                    # Strategy 2: Look for input type button with value "师门"
                     师门_button = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), '师门')]"))
+                        EC.element_to_be_clickable((By.XPATH, "//input[@type='button' and @value='师门']"))
                     )
-                    logger.info("Found 师门 button using contains text")
+                    logger.info("Found 师门 button using input button")
                 except:
                     try:
-                        # Strategy 3: Input with value
+                        # Strategy 3: Look for any clickable element containing "师门"
                         师门_button = WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.XPATH, "//input[@value='师门']"))
+                            EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), '师门') and (name()='button' or name()='input' or name()='a' or name()='div')]"))
                         )
-                        logger.info("Found 师门 button using input value")
+                        logger.info("Found 师门 button using general element search")
                     except:
-                        # Strategy 4: General button targeting
-                        buttons = self.driver.find_elements(By.TAG_NAME, "button")
-                        for button in buttons:
-                            if "师门" in button.text:
-                                师门_button = button
-                                logger.info("Found 师门 button using general button search")
-                                break
+                        try:
+                            # Strategy 4: Look by class or other attributes that might indicate login type selection
+                            buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                            inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                            all_elements = buttons + inputs
+                            
+                            for element in all_elements:
+                                element_text = element.text.strip() if element.text else ""
+                                element_value = element.get_attribute('value') or ""
+                                
+                                if "师门" in element_text or "师门" in element_value:
+                                    师门_button = element
+                                    logger.info(f"Found 师门 button using comprehensive search: {element.tag_name}")
+                                    break
+                        except Exception as e:
+                            logger.warning(f"Error in comprehensive button search: {str(e)}")
             
             if 师门_button:
-                # Click the 师门 button
                 try:
+                    # Scroll to the button to ensure it's visible
+                    self.driver.execute_script("arguments[0].scrollIntoView(true);", 师门_button)
+                    time.sleep(0.5)
+                    
+                    # Highlight the button for debugging
+                    self.driver.execute_script("arguments[0].style.border='3px solid red';", 师门_button)
+                    
+                    # Try regular click first
                     师门_button.click()
                     logger.info("Clicked 师门 button successfully")
-                except:
-                    # Try JavaScript click if regular click fails
-                    self.driver.execute_script("arguments[0].click();", 师门_button)
-                    logger.info("Clicked 师门 button using JavaScript")
+                    
+                except Exception as click_error:
+                    try:
+                        # Try JavaScript click if regular click fails
+                        self.driver.execute_script("arguments[0].click();", 师门_button)
+                        logger.info("Clicked 师门 button using JavaScript")
+                    except Exception as js_error:
+                        logger.error(f"Failed to click 师门 button: regular={click_error}, js={js_error}")
                 
-                # Wait a moment for the form to update
-                time.sleep(1)
+                # Wait for the form to update after selecting 师门
+                time.sleep(2)
+                
+                # Take another screenshot after clicking 师门
+                try:
+                    self.driver.save_screenshot(f"/app/debug_screenshots/after_shimen_{self.account.username}.png")
+                    logger.info(f"Saved post-师门 screenshot for {self.account.username}")
+                except:
+                    pass
+                    
             else:
-                logger.warning("Could not find 师门 button, proceeding with normal login")
+                logger.error("Could not find 师门 button! This might cause login to fail.")
+                # Take screenshot of the current page for debugging
+                try:
+                    self.driver.save_screenshot(f"/app/debug_screenshots/no_shimen_button_{self.account.username}.png")
+                    logger.info(f"Saved no-师门-button screenshot for debugging")
+                except:
+                    pass
             
-            # Wait for login form to be available
+            # Wait for login form to be available after selecting 师门
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.NAME, "username"))
             )
