@@ -498,8 +498,44 @@ async def export_crawler_data(account_username: Optional[str] = None):
         headers={"Content-Disposition": "attachment; filename=crawler_data.csv"}
     )
 
-# Crawler Control
-@api_router.post("/crawler/start")
+# Add mock data generation
+@api_router.post("/crawler/mock-data")
+async def generate_mock_data():
+    """Generate mock data for demonstration"""
+    try:
+        import random
+        
+        accounts = ["KR666", "KR777", "KR888", "KR999", "KR000"]
+        mock_data = []
+        
+        for account in accounts:
+            for i in range(5):  # 5 records per account
+                data_item = CrawlerData(
+                    account_username=account,
+                    sequence_number=i + 1,
+                    ip=f"222.210.79.{115 + i}",
+                    type=random.choice(["鬼砍", "剑客", "杀手"]),
+                    name=f"测试角色{i+1}",
+                    level=random.randint(80, 120),
+                    guild=random.choice(["青帮", "无门派", "九雷剑", "五毒"]),
+                    skill=random.choice(["0", "1", "2", "3"]),
+                    count_current=random.randint(1, 50),
+                    count_total=random.randint(100, 200),
+                    total_time=f"{random.randint(1, 12)}/{random.randint(100, 200)}",
+                    status=random.choice(["在线", "离线", "忙碌"]),
+                    runtime=f"{random.randint(0, 23):02d}:{random.randint(0, 59):02d}:{random.randint(0, 59):02d}"
+                )
+                mock_data.append(data_item)
+        
+        # Insert mock data
+        for data_item in mock_data:
+            await db.crawler_data.insert_one(data_item.dict())
+        
+        return {"message": f"Generated {len(mock_data)} mock data records"}
+        
+    except Exception as e:
+        logger.error(f"Error generating mock data: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 async def start_crawler(background_tasks: BackgroundTasks):
     """Start the crawler with scheduled tasks"""
     try:
