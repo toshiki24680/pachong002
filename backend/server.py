@@ -98,7 +98,7 @@ class CrawlerData(BaseModel):
 class CrawlerConfig(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     target_url: str = "http://xiao8.lodsve.com:6007/x8login"
-    crawl_interval: int = 50  # seconds
+    crawl_interval: int = 45  # seconds - changed from 50 to 45
     max_concurrent: int = 10
     headless: bool = True
     timeout: int = 30
