@@ -276,9 +276,57 @@ class XiaoBaCrawler:
             password_field.clear()
             password_field.send_keys(self.account.password)
             
-            # Click login button
-            login_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit'], input[type='submit']")
-            login_button.click()
+            # Take screenshot before clicking login
+            try:
+                self.driver.save_screenshot(f"/app/debug_screenshots/before_login_{self.account.username}.png")
+                logger.info(f"Saved before-login screenshot for {self.account.username}")
+            except:
+                pass
+            
+            # Find and click login button - try multiple strategies
+            login_clicked = False
+            try:
+                # Strategy 1: Look for submit button
+                login_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit'], input[type='submit']")
+                login_button.click()
+                login_clicked = True
+                logger.info("Clicked login button using submit selector")
+            except:
+                try:
+                    # Strategy 2: Look for button with login-related text
+                    login_button = self.driver.find_element(By.XPATH, "//button[contains(text(), '登录') or contains(text(), '登錄') or contains(text(), 'Login')]")
+                    login_button.click()
+                    login_clicked = True
+                    logger.info("Clicked login button using text search")
+                except:
+                    try:
+                        # Strategy 3: Look for input with login-related value
+                        login_button = self.driver.find_element(By.XPATH, "//input[@value='登录' or @value='登錄' or @value='Login']")
+                        login_button.click()
+                        login_clicked = True
+                        logger.info("Clicked login button using input value")
+                    except:
+                        # Strategy 4: Find all buttons and look for login-related ones
+                        buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                        inputs = self.driver.find_elements(By.XPATH, "//input[@type='button' or @type='submit']")
+                        
+                        for element in buttons + inputs:
+                            text = element.text.strip() if element.text else ""
+                            value = element.get_attribute('value') or ""
+                            
+                            if any(keyword in text.lower() or keyword in value.lower() for keyword in ['登录', '登錄', 'login', '确定', '提交']):
+                                element.click()
+                                login_clicked = True
+                                logger.info(f"Clicked login button using comprehensive search: {text or value}")
+                                break
+            
+            if not login_clicked:
+                logger.error("Could not find login button!")
+                try:
+                    self.driver.save_screenshot(f"/app/debug_screenshots/no_login_button_{self.account.username}.png")
+                except:
+                    pass
+                return False
             
             # Wait for successful login - check if we're redirected or if login form disappears
             WebDriverWait(self.driver, 10).until(
