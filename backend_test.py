@@ -246,14 +246,69 @@ class XiaoBaCrawlerTester:
             200
         )
 
-    def test_get_crawler_data(self):
-        """Test getting crawler data"""
+    def test_get_crawler_data(self, params=None):
+        """Test getting crawler data with optional filters"""
         return self.run_test(
             "Get Crawler Data",
             "GET",
             "crawler/data",
-            200
+            200,
+            params=params
         )
+    
+    def test_filtered_crawler_data(self):
+        """Test getting crawler data with various filters"""
+        print("\n🔍 Testing Data Filtering API...")
+        self.tests_run += 1
+        
+        # Test different filter combinations
+        filter_tests = [
+            {"name": "Filter by account", "params": {"account_username": "KR666"}},
+            {"name": "Filter by keyword", "params": {"keyword": "测试"}},
+            {"name": "Filter by status", "params": {"status": "在线"}},
+            {"name": "Filter by guild", "params": {"guild": "青帮"}},
+            {"name": "Filter by count range", "params": {"min_count": 1, "max_count": 50}},
+            {"name": "Filter with limit", "params": {"limit": 5}},
+            {"name": "Combined filters", "params": {"account_username": "KR666", "limit": 3}}
+        ]
+        
+        success_count = 0
+        for test in filter_tests:
+            print(f"\n  Testing {test['name']}...")
+            try:
+                url = f"{self.api_url}/crawler/data"
+                response = requests.get(url, params=test['params'])
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    print(f"  ✅ Filter returned {len(data)} results")
+                    
+                    # Verify the filter worked correctly
+                    if "account_username" in test['params'] and data:
+                        if all(item['account_username'] == test['params']['account_username'] for item in data):
+                            print(f"  ✅ All results match account filter: {test['params']['account_username']}")
+                        else:
+                            print(f"  ❌ Some results don't match account filter")
+                    
+                    if "limit" in test['params']:
+                        if len(data) <= test['params']['limit']:
+                            print(f"  ✅ Results respect limit: {len(data)} <= {test['params']['limit']}")
+                        else:
+                            print(f"  ❌ Results exceed limit: {len(data)} > {test['params']['limit']}")
+                    
+                    success_count += 1
+                else:
+                    print(f"  ❌ Failed with status code: {response.status_code}")
+            except Exception as e:
+                print(f"  ❌ Error: {str(e)}")
+        
+        if success_count == len(filter_tests):
+            self.tests_passed += 1
+            print(f"✅ All {len(filter_tests)} filter tests passed")
+            return True
+        else:
+            print(f"❌ {len(filter_tests) - success_count} filter tests failed")
+            return False
 
     def test_export_csv(self):
         """Test exporting CSV data"""
