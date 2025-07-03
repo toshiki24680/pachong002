@@ -106,28 +106,34 @@ user_problem_statement: "现在的爬虫不会持续运行，需要不间断的�
 
 backend:
   - task: "Continuous crawler scheduling at 45-second intervals"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Current crawler interval is hardcoded to 50 seconds instead of 45 seconds. Scheduler is not using config value and doesn't start automatically."
+      - working: true
+        agent: "testing"
+        comment: "Crawler interval is now correctly set to 45 seconds. The configuration can be updated via the PUT /api/crawler/config endpoint. The crawler is using the configured interval value."
   
   - task: "Auto-start crawler on server startup"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Crawler needs to be started manually via API endpoint instead of starting automatically when server starts."
+      - working: true
+        agent: "testing"
+        comment: "Crawler now auto-starts on server startup. The startup_event function initializes default accounts and starts the scheduler with the configured interval."
 
 frontend:
   - task: "Display continuous crawler status"
@@ -145,7 +151,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 1
+  test_sequence: 2
   run_ui: false
 
 test_plan:
@@ -159,3 +165,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Identified that current crawler system has scheduling set to 50 seconds instead of 45 seconds, hardcoded instead of using config, and doesn't start automatically. Need to implement continuous crawling system."
+  - agent: "testing"
+    message: "Tested the backend crawler system. The crawler is now correctly configured with a 45-second interval and auto-starts on server startup. All required endpoints are working properly. The system creates default accounts (KR666, KR777, KR888, KR999, KR000) and can collect data continuously. The start/stop functionality is working as expected."
