@@ -328,11 +328,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Account management API (add/delete accounts)"
-    - "Batch account start/stop API"
-    - "Data accumulation logic for count reset"
-    - "Keyword statistics tracking"
-  stuck_tasks: []
+    - "Analytics Endpoints"
+  stuck_tasks:
+    - "Analytics Endpoints"
   test_all: false
   test_priority: "high_first"
 
@@ -341,3 +339,5 @@ agent_communication:
     message: "User requested new features: 1) Account management (add/delete), 2) Batch account controls, 3) Data accumulation logic for count resets, 4) Keyword statistics tracking, 5) Data filtering. Starting implementation with backend APIs first."
   - agent: "testing"
     message: "Tested the backend crawler system. The crawler is now correctly configured with a 45-second interval and auto-starts on server startup. All required endpoints are working properly. The system creates default accounts (KR666, KR777, KR888, KR999, KR000) and can collect data continuously. The start/stop functionality is working as expected."
+  - agent: "testing"
+    message: "Tested all the new features. Most of the features are working correctly, including account management, batch operations, data accumulation logic, keyword tracking, data filtering, and enhanced CSV export. However, there's an issue with the accounts-performance endpoint. It's failing with an error related to the keywords_detected field being null in some documents. The error is: 'PlanExecutor error during aggregation :: caused by :: The argument to $size must be an array, but was of type: null'. This needs to be fixed."
