@@ -297,7 +297,12 @@ def main():
     tester.test_stop_crawler()
     
     # Verify it's stopped
-    success, status_after_stop = tester.test_get_crawler_status()
+    success, status_after_stop = tester.run_test(
+        "Get Crawler Status After Stop",
+        "GET",
+        "crawler/status",
+        200
+    )
     if success and status_after_stop.get('crawl_status') == 'stopped':
         print("✅ Crawler successfully stopped")
     
@@ -305,7 +310,12 @@ def main():
     tester.test_start_crawler()
     
     # Verify it's running
-    success, status_after_start = tester.test_get_crawler_status()
+    success, status_after_start = tester.run_test(
+        "Get Crawler Status After Start",
+        "GET",
+        "crawler/status",
+        200
+    )
     if success and status_after_start.get('crawl_status') == 'running':
         print("✅ Crawler successfully restarted")
     
