@@ -272,9 +272,81 @@ class XiaoBaCrawler:
                     pass
             
             # Wait for login form to be available after selecting 师门
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.NAME, "username"))
-            )
+            logger.info("Waiting for login form to appear after clicking 师门...")
+            
+            # Try multiple strategies to find the username field after clicking 师门
+            username_field = None
+            password_field = None
+            
+            # Wait longer and try different selectors
+            for attempt in range(3):
+                try:
+                    logger.info(f"Attempt {attempt + 1} to find login form...")
+                    
+                    # Try different selectors for username field
+                    for selector in ['username', 'user', 'account', 'name']:
+                        try:
+                            username_field = WebDriverWait(self.driver, 10).until(
+                                EC.presence_of_element_located((By.NAME, selector))
+                            )
+                            logger.info(f"Found username field using name='{selector}'")
+                            break
+                        except:
+                            continue
+                    
+                    if not username_field:
+                        # Try by ID
+                        for selector in ['username', 'user', 'account', 'name']:
+                            try:
+                                username_field = self.driver.find_element(By.ID, selector)
+                                logger.info(f"Found username field using id='{selector}'")
+                                break
+                            except:
+                                continue
+                    
+                    if not username_field:
+                        # Try by type
+                        try:
+                            username_field = self.driver.find_element(By.XPATH, "//input[@type='text' or @type='email']")
+                            logger.info("Found username field using input type")
+                        except:
+                            pass
+                    
+                    if username_field:
+                        # Look for password field near the username field
+                        try:
+                            password_field = self.driver.find_element(By.NAME, "password")
+                            logger.info("Found password field using name='password'")
+                        except:
+                            try:
+                                password_field = self.driver.find_element(By.ID, "password")
+                                logger.info("Found password field using id='password'")
+                            except:
+                                try:
+                                    password_field = self.driver.find_element(By.XPATH, "//input[@type='password']")
+                                    logger.info("Found password field using type='password'")
+                                except:
+                                    pass
+                        
+                        if password_field:
+                            break
+                    
+                    # If we didn't find the fields, wait and try again
+                    logger.info(f"Login form not ready yet, waiting 5 seconds before next attempt...")
+                    time.sleep(5)
+                    
+                except Exception as e:
+                    logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+                    time.sleep(5)
+            
+            if not username_field or not password_field:
+                logger.error("Could not find login form fields after clicking 师门 button")
+                try:
+                    self.driver.save_screenshot(f"/app/debug_screenshots/no_login_form_{self.account.username}.png")
+                    logger.info(f"Saved no-login-form screenshot for debugging")
+                except:
+                    pass
+                return False
             
             # Fill in username and password
             username_field = self.driver.find_element(By.NAME, "username")
