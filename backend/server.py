@@ -315,23 +315,94 @@ class XiaoBaCrawler:
             return []
     
     def accumulate_data(self, new_data: List[CrawlerData]):
-        """Accumulate count data with previous records"""
+        """Accumulate count data with previous records and detect keywords"""
         try:
+            # Define keywords to track
+            keywords_to_track = ["人脸提示", "没钱了", "网络异常", "系统维护", "账号异常", "登录失败"]
+            
             for new_item in new_data:
                 # Check if we have previous data for this item
                 key = f"{new_item.account_username}_{new_item.sequence_number}_{new_item.ip}"
                 
+                # Initialize keyword detection
+                new_item.keywords_detected = {}
+                
+                # Check all text fields for keywords
+                text_fields = [
+                    new_item.type, new_item.name, new_item.guild, 
+                    new_item.skill, new_item.status, new_item.runtime,
+                    new_item.total_time
+                ]
+                
+                for keyword in keywords_to_track:
+                    count = 0
+                    for field in text_fields:
+                        if field and keyword in str(field):
+                            count += str(field).count(keyword)
+                    if count > 0:
+                        new_item.keywords_detected[keyword] = count
+                
+                # Handle data accumulation logic
                 if key in self.last_data:
                     last_item = self.last_data[key]
-                    # If current count is less than last count, accumulate
-                    if new_item.count_current < last_item.count_current:
-                        new_item.count_current += last_item.count_current
+                    
+                    # Check if count has reset (current < last and significant difference)
+                    if (new_item.count_current < last_item.count_current and 
+                        last_item.count_current - new_item.count_current > 5):
+                        # Count has reset, accumulate the previous count
+                        new_item.accumulated_count = last_item.accumulated_count + last_item.count_current
+                        logger.info(f"Count reset detected for {key}: {last_item.count_current} -> {new_item.count_current}, accumulated: {new_item.accumulated_count}")
+                    else:
+                        # Normal progression, keep previous accumulated count
+                        new_item.accumulated_count = last_item.accumulated_count
+                        
+                        # If current count is still less than last, add the difference
+                        if new_item.count_current < last_item.count_current:
+                            new_item.accumulated_count += (last_item.count_current - new_item.count_current)
+                else:
+                    # First time seeing this item
+                    new_item.accumulated_count = 0
                 
                 # Update last data
                 self.last_data[key] = new_item
                 
         except Exception as e:
             logger.error(f"Error accumulating data: {str(e)}")
+    
+    async def save_keyword_stats(self, data_list: List[CrawlerData]):
+        """Save keyword statistics to database"""
+        try:
+            keyword_stats = {}
+            
+            for data_item in data_list:
+                for keyword, count in data_item.keywords_detected.items():
+                    if keyword not in keyword_stats:
+                        keyword_stats[keyword] = {
+                            "keyword": keyword,
+                            "total_count": 0,
+                            "accounts_affected": set(),
+                            "last_seen": datetime.utcnow()
+                        }
+                    
+                    keyword_stats[keyword]["total_count"] += count
+                    keyword_stats[keyword]["accounts_affected"].add(data_item.account_username)
+                    keyword_stats[keyword]["last_seen"] = datetime.utcnow()
+            
+            # Update keyword stats in database
+            for keyword, stats in keyword_stats.items():
+                # Convert set to list for JSON serialization
+                stats["accounts_affected"] = list(stats["accounts_affected"])
+                
+                await db.keyword_stats.update_one(
+                    {"keyword": keyword},
+                    {"$set": stats, "$inc": {"total_count": stats["total_count"]}},
+                    upsert=True
+                )
+            
+            logger.info(f"Updated keyword stats for {len(keyword_stats)} keywords")
+            
+        except Exception as e:
+            logger.error(f"Error saving keyword stats: {str(e)}")
     
     async def save_data(self, data_list: List[CrawlerData]):
         """Save crawler data to database"""
